@@ -3,7 +3,7 @@ from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.response import Response
-import requests
+import re, json
 from django.conf import settings
 from openai import OpenAI
 
@@ -27,10 +27,28 @@ class assistant(APIView):
     # message checker
     def get(self, request, *args, **kwargs):
         thread_messages = client.beta.threads.messages.list("thread_YqiML69fnKbqpPjdSzSQOoq2")
+        
         # the actual response
         # print(thread_messages.data[0].content[0].text.value)
         result = thread_messages.data[0].content[0].text.value
-        return Response(result)
+
+        # Extract the JSON part using regex
+        json_part = re.search(r'```json\n({.*?})\n```', result, re.DOTALL)
+        if json_part:
+            json_string = json_part.group(1)
+            
+            # Replace null values with the string "null"
+            json_string = json_string.replace('null', '"null"')
+
+            # Remove backslashes from escaped double quotes
+            json_string = json_string.replace('\\"', '"')
+            
+            # Convert the JSON string to a Python dictionary
+            json_dict = json.loads(json_string)
+        else:
+            print("No JSON part found in the provided string.")
+        
+        return Response(json_dict)
     
     # def post(self, request, *args, **kwargs):
     #     url = "https://api.openai.com/v1/threads"
