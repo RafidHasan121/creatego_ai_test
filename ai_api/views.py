@@ -26,7 +26,7 @@ class assistant(APIView):
     
     # message checker
     def get(self, request, *args, **kwargs):
-        thread_messages = client.beta.threads.messages.list("thread_YqiML69fnKbqpPjdSzSQOoq2")
+        thread_messages = client.beta.threads.messages.list("thread_qiBndgau1IMeug6XWgSWwlqA")
         
         # the actual response
         # print(thread_messages.data[0].content[0].text.value)
