@@ -26,7 +26,11 @@ class assistant(APIView):
     
     # message checker
     def get(self, request, *args, **kwargs):
-        thread_messages = client.beta.threads.messages.list("thread_qiBndgau1IMeug6XWgSWwlqA")
+        try:
+            t_id = str(request.query_params.get('t_id'))
+            thread_messages = client.beta.threads.messages.list(t_id)
+        except:
+            thread_messages = client.beta.threads.messages.list("thread_qiBndgau1IMeug6XWgSWwlqA")
         
         # the actual response
         # print(thread_messages.data[0].content[0].text.value)
@@ -42,7 +46,13 @@ class assistant(APIView):
 
             # Remove backslashes from escaped double quotes
             json_string = json_string.replace('\\"', '"')
-            
+
+            # Remove single-line comments
+            json_string = re.sub(r'//.*?\n', '\n', json_string)
+            # Remove multi-line comments
+            json_string = re.sub(r'/\*.*?\*/', '', json_string, flags=re.DOTALL)
+                
+            print(json_string)
             # Convert the JSON string to a Python dictionary
             json_dict = json.loads(json_string)
         else:
