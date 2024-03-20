@@ -30,35 +30,51 @@ class assistant(APIView):
             t_id = str(request.query_params.get('t_id'))
             thread_messages = client.beta.threads.messages.list(t_id)
         except:
-            thread_messages = client.beta.threads.messages.list("thread_qiBndgau1IMeug6XWgSWwlqA")
+            thread_messages = client.beta.threads.messages.list("thread_XBEllU5gl6iNUf7mVDbbnNzF")
         
-        # the actual response
-        # print(thread_messages.data[0].content[0].text.value)
+        # # the actual response
+        # # print(thread_messages.data[0].content[0].text.value)
         result = thread_messages.data[0].content[0].text.value
+        
+        # #check for assistant response
+        # for x in thread_messages.data:
+        #     flag = False
+        #     if x.role == 'assistant':
+        #         flag = True
+        #         break
+        
+        # # if no assistant response
+        # if not flag:
+        #     run = client.beta.threads.runs.create(
+        #     thread_id=t_id,
+        #     assistant_id="asst_KjwmG4O67F2jx0Uxa6sI1ggu"
+        #     )
+        # while run.status == "completed":
+        #     # result = thread_messages.data[0].content[0].text.value
+        #     return Response(result)
+            
+
 
         # Extract the JSON part using regex
         json_part = re.search(r'```json\n({.*?})\n```', result, re.DOTALL)
         if json_part:
             json_string = json_part.group(1)
-            
+
             # Replace null values with the string "null"
             json_string = json_string.replace('null', '"null"')
 
-            # Remove backslashes from escaped double quotes
-            json_string = json_string.replace('\\"', '"')
+            # Parse JSON string to dictionary
+            data = json.loads(json_string)
 
-            # Remove single-line comments
-            json_string = re.sub(r'//.*?\n', '\n', json_string)
-            # Remove multi-line comments
-            json_string = re.sub(r'/\*.*?\*/', '', json_string, flags=re.DOTALL)
-                
-            print(json_string)
-            # Convert the JSON string to a Python dictionary
-            json_dict = json.loads(json_string)
+            # Iterate over keys and set values to null
+            for key in data.keys():
+                if key not in ['childWidgets', 'isPublic']:
+                    data[key] = None
+
         else:
-            print("No JSON part found in the provided string.")
+            return Response(client.beta.threads.messages.list(t_id))
         
-        return Response(json_dict)
+        return Response(data)
     
     # def post(self, request, *args, **kwargs):
     #     url = "https://api.openai.com/v1/threads"
