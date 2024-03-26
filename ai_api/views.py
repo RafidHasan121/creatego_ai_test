@@ -13,27 +13,6 @@ import time
 
 client = OpenAI(api_key=settings.API_KEY)
 
-
-# def JsonExtractor(result):
-#     # Extract the JSON part using regex
-#     json_part = re.search(r'```json\n({.*?})\n```', result, re.DOTALL)
-#     if json_part:
-#         json_string = json_part.group(1)
-
-#         # Replace null values with the string "null"
-#         json_string = json_string.replace('null', '"null"')
-
-#         # Parse JSON string to dictionary
-#         data = json.loads(json_string)
-
-#         # Iterate over keys and set values to null
-#         for key in data.keys():
-#             if key not in ['childWidgets', 'isPublic']:
-#                 data[key] = None
-#         return data
-#     else:
-#         return None
-
 def JsonExtractor(result):
     # Initialize list to store extracted JSON objects
     extracted_json_objects = []
@@ -89,14 +68,17 @@ class assistant(APIView):
             thread_messages = client.beta.threads.messages.list(t_id)
         except:
             thread_messages = client.beta.threads.messages.list(
-                "thread_VsUxIrjkSiN4lklqUnUVSItb")
+                "thread_H47Tmag9DiKc6C6yriIBqABs")
         
+
 #         print(thread_messages)
 #         run = client.beta.threads.runs.retrieve(
 #   thread_id='thread_7uY3sPNkXEeYMBBQS5h0xuHn',
 #   run_id="run_QgJpM88Pq2iKtAFvJH07yvZR"
 # )
 #         return Response(run)
+
+
         # creating a list of all messages in the thread
         msg_list = []
         for data in thread_messages.data:
@@ -110,16 +92,7 @@ class assistant(APIView):
         if not msg_list or msg_list == [[]]:
             return Response(thread_messages.data)
         else:
-            return Response(thread_messages.data)
-
-    # def post(self, request, *args, **kwargs):
-    #     url = "https://api.openai.com/v1/threads"
-    #     _msg = request.data.get("msg")
-    #     print(_msg)
-    #     msg = [{"role": "user", "content": str(_msg)}]
-    #     result = requests.post(url, headers=self.auth_headers, data=msg).json()
-    #     print(result)
-    #     return Response(result)
+            return Response(msg_list)
 
     def post(self, request, *args, **kwargs):
         _msg = request.data.get("msg")
