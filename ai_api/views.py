@@ -9,7 +9,7 @@ from django.conf import settings
 from openai import OpenAI
 import time
 
-# assistant_id = asst_KjwmG4O67F2jx0Uxa6sI1ggu
+# assistant_id = asst_6KDOPPSAFiczPYjvi2ZjXweX
 
 client = OpenAI(api_key=settings.API_KEY)
 
@@ -37,27 +37,39 @@ client = OpenAI(api_key=settings.API_KEY)
 def JsonExtractor(result):
     # Initialize list to store extracted JSON objects
     extracted_json_objects = []
-
+    json_struct = {
+    "id":None,
+    "name":None,
+    "description":None,
+    "width":None,
+    "height":None,
+    "dx":None,
+    "dy":None,
+    "previewImageUrl":None,
+    "createdAt":None,
+    "updatedAt":None,
+    "isPublic":False,
+ }
     # Extract JSON parts using regex
     json_parts = re.findall(r'```json\n({.*?})\n```', result, re.DOTALL)
 
     # Iterate over extracted JSON parts
     for json_string in json_parts:
-        # Replace null values with the string "null"
-        json_string = json_string.replace('null', '"null"')
+        # # Replace null values with the string "null"
+        # json_string = json_string.replace('null', '"null"')
 
         # Parse JSON string to dictionary
         data = json.loads(json_string)
-
-        # Iterate over keys and set values to null
-        for key in data.keys():
-            if key not in ['childWidgets', 'isPublic']:
-                data[key] = None
-
+        
+        # add childwidgets key in json_struct for actual component structure
+        if "childwidgets" not in data:
+            json_struct["childwidgets"] = [data]
+        
         # Append extracted JSON object to the list
-        extracted_json_objects.append(data)
+        extracted_json_objects.append(json_struct)
 
     # Return list of extracted JSON objects
+    # print(json_string)
     return extracted_json_objects
 
 
@@ -67,6 +79,8 @@ class assistant(APIView):
         "Authorization": "Bearer " + settings.API_KEY,
         "OpenAI-Beta": "assistants=v1"
     }
+    
+    
 
     # returns message list 
     def get(self, request, *args, **kwargs):
@@ -77,17 +91,26 @@ class assistant(APIView):
             thread_messages = client.beta.threads.messages.list(
                 "thread_VsUxIrjkSiN4lklqUnUVSItb")
         
+#         print(thread_messages)
+#         run = client.beta.threads.runs.retrieve(
+#   thread_id='thread_7uY3sPNkXEeYMBBQS5h0xuHn',
+#   run_id="run_QgJpM88Pq2iKtAFvJH07yvZR"
+# )
+#         return Response(run)
         # creating a list of all messages in the thread
         msg_list = []
         for data in thread_messages.data:
             result = data.content[0].text.value
-            msg_list.append(JsonExtractor(result))
+            _result = JsonExtractor(result)
+            if _result == []:
+                _result = [result]
+            msg_list.append(_result)
         
         # returning msg list or thread data
         if not msg_list or msg_list == [[]]:
             return Response(thread_messages.data)
         else:
-            return Response(msg_list)
+            return Response(thread_messages.data)
 
     # def post(self, request, *args, **kwargs):
     #     url = "https://api.openai.com/v1/threads"
@@ -116,7 +139,7 @@ class assistant(APIView):
             # creating run
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id="asst_KjwmG4O67F2jx0Uxa6sI1ggu"
+                assistant_id="asst_6KDOPPSAFiczPYjvi2ZjXweX"
             )
         else:    
             #adding new msg to same thread
@@ -129,19 +152,27 @@ class assistant(APIView):
             #creating run
             run = client.beta.threads.runs.create(
                 thread_id=thread.id,
-                assistant_id="asst_KjwmG4O67F2jx0Uxa6sI1ggu"
+                assistant_id="asst_6KDOPPSAFiczPYjvi2ZjXweX"
             )
 
         # checking run status until completed
         while True:
+            run = client.beta.threads.runs.retrieve(
+                thread_id=thread.id,
+                run_id= run.id
+            )
             if run.status == 'completed':
                 break
-            time.sleep() # Wait for a second before checking again
+            time.sleep(5) # Wait for five second before checking again
 
         # getting the thread messages list
         thread_messages = client.beta.threads.messages.list(thread.id)
+        msg_list = []
         for data in thread_messages.data:
             result = data.content[0].text.value
-            msg_list = []
-            msg_list.append(JsonExtractor(result))
+            _result = JsonExtractor(result)
+            if _result == []:
+                _result = [result]
+            msg_list.append(_result)
+        print(run)        
         return Response(msg_list)
