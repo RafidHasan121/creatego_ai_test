@@ -16,19 +16,6 @@ client = OpenAI(api_key=settings.API_KEY)
 def JsonExtractor(result):
     # Initialize list to store extracted JSON objects
     extracted_json_objects = []
-    json_struct = {
-    "id":None,
-    "name":None,
-    "description":None,
-    "width":None,
-    "height":None,
-    "dx":None,
-    "dy":None,
-    "previewImageUrl":None,
-    "createdAt":None,
-    "updatedAt":None,
-    "isPublic":False,
- }
     # Extract JSON parts using regex
     json_parts = re.findall(r'```json\n({.*?})\n```', result, re.DOTALL)
 
@@ -39,13 +26,30 @@ def JsonExtractor(result):
 
         # Parse JSON string to dictionary
         data = json.loads(json_string)
-        
+        # print(data)
         # add childwidgets key in json_struct for actual component structure
         if "childwidgets" not in data:
-            json_struct["childwidgets"] = [data]
-        
+            json_struct = {
+                "id":None,
+                "name":None,
+                "description":None,
+                "width":None,
+                "height":None,
+                "dx":None,
+                "dy":None,
+                "previewImageUrl":None,
+                "createdAt":None,
+                "updatedAt":None,
+                "isPublic":False,
+                }
+            json_struct.update({"childwidgets": [data]})
+            # print(json_struct)
+            
+            extracted_json_objects.append(json_struct)
+            
         # Append extracted JSON object to the list
-        extracted_json_objects.append(json_struct)
+        else:
+            extracted_json_objects.append(data)
 
     # Return list of extracted JSON objects
     # print(json_string)
